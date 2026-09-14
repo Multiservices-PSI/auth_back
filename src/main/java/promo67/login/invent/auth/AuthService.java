@@ -24,14 +24,17 @@ class AuthService {
     public AuthResponse login(LoginRequest request) {
             authman.authenticate(new UsernamePasswordAuthenticationToken
                 (request.getUsername(), request.getPassword()));
-                UserDetails user = repo.findByUsernameOrEmail(request.getUsername(), request.getUsername()).orElseThrow();
+                UserDetails user = repo.findByUsername(request.getUsername())
+                    .or(() -> repo.findByEmail(request.getUsername()))
+                    .orElseThrow();
             return AuthResponse.builder()
                 .token(serv.getToken(user)).build();
     }
 
     public AuthResponse register(RegisterRequest request) {
 
-        if (repo.findByUsernameOrEmail(request.getUsername(), request.getUsername()).isPresent()) {
+        if (repo.findByUsername(request.getUsername()).isPresent() ||
+        repo.findByEmail(request.getEmail()).isPresent()) {
         throw new IllegalArgumentException("El nombre de usuario ya está en uso,"+
         " o el correo electrónico ya está registrado."); 
         }

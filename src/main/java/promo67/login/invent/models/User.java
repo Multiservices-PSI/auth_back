@@ -31,9 +31,11 @@ public class User implements UserDetails{
     @Id
     @GeneratedValue
     Integer id;
-    @Column(nullable = false)
+    @Column(nullable = false , unique = true)
     String username;
+    @Column(nullable = false)
     String password;
+    @Column(nullable = false , unique = true)
     String email;
     @Enumerated(EnumType.STRING)
     Role role;
