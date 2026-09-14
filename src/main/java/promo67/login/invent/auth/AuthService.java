@@ -2,6 +2,7 @@ package promo67.login.invent.auth;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,21 +23,27 @@ class AuthService {
     private final PasswordEncoder encoder;
 
     public AuthResponse login(LoginRequest request) {
-            authman.authenticate(new UsernamePasswordAuthenticationToken
-                (request.getUsername(), request.getPassword()));
-                UserDetails user = repo.findByUsername(request.getUsername())
-                    .or(() -> repo.findByEmail(request.getUsername()))
-                    .orElseThrow();
-            return AuthResponse.builder()
-                .token(serv.getToken(user)).build();
-    }
+    String principal = (request.getUsername() != null && !request.getUsername().isEmpty()) 
+                        ? request.getUsername() 
+                        : request.getEmail();
+
+    Authentication authentication = authman.authenticate(
+            new UsernamePasswordAuthenticationToken(principal, request.getPassword()));
+
+    UserDetails user = (UserDetails) authentication.getPrincipal();
+
+    return AuthResponse.builder()
+            .token(serv.getToken(user))
+            .build();
+}
 
     public AuthResponse register(RegisterRequest request) {
 
-        if (repo.findByUsername(request.getUsername()).isPresent() ||
-        repo.findByEmail(request.getEmail()).isPresent()) {
-        throw new IllegalArgumentException("El nombre de usuario ya está en uso,"+
-        " o el correo electrónico ya está registrado."); 
+        if (repo.findByUsername(request.getUsername()).isPresent()) {
+        throw new IllegalArgumentException("El nombre de usuario ya está en uso."); 
+        }
+        else if (repo.findByEmail(request.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("El correo electrónico ya está registrado."); 
         }
 
         User user = User.builder()
